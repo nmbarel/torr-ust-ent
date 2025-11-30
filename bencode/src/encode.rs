@@ -42,7 +42,6 @@ impl Encoder {
             Bencode::Dict(d) => {
                 let mut result = Vec::new();
                 result.push(b'd');
-                // assumes `d` implements `iter()` and yields (&K, &V), where K is a Vec<u8> (or similar)
                 for (k, v) in d.iter() {
                     result.extend_from_slice(k.len().to_string().as_bytes());
                     result.push(b':');
@@ -53,8 +52,6 @@ impl Encoder {
                 result.push(b'e');
                 Ok(result)
             }
-            // If your Bencode enum has more variants, add them here.
-            // Fallback:
             _ => Err(BencodeError::InvalidFormat),
         }
     }

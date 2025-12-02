@@ -52,7 +52,6 @@ impl Encoder {
                 result.push(b'e');
                 Ok(result)
             }
-            _ => Err(BencodeError::InvalidFormat),
         }
     }
 }

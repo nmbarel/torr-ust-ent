@@ -1,6 +1,20 @@
+use std::borrow::Cow;
+
 #[derive(Debug)]
 pub enum TorrentError {
-    Message(String),
+    Message(Cow<'static, str>),
+}
+
+impl TorrentError {
+    pub fn msg<S: Into<Cow<'static, str>>>(s: S) -> Self {
+        TorrentError::Message(s.into())
+    }
+}
+
+impl<S: Into<Cow<'static, str>>> From<S> for TorrentError {
+    fn from(s: S) -> Self {
+        TorrentError::Message(s.into())
+    }
 }
 
 impl std::fmt::Display for TorrentError {

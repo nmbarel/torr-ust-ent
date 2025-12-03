@@ -1,6 +1,7 @@
 use bencode::Bencode;
 use bencode::decode::Decoder;
 use bencode::encode::Encoder;
+use torrent_file::value::TorrentMetadata;
 
 fn main() {
     // A few example bencoded values
@@ -49,6 +50,17 @@ fn main() {
         Ok(value) => println!("encoding: {:#?}", String::from_utf8_lossy(&value).to_string()),
         Err(e) => eprintln!("error: {:?}", e),
     }
+
+    //File decode
+    let parsedTorrent = TorrentMetadata::from_file("D:\\Coding\\A_Star_is_Born.mp4.torrent");
+
+    match parsedTorrent {
+        Ok(tm) => {
+            println!("{:#?}", tm)
+        },
+        Err(e) => eprintln!("{}", e)
+    }
+
 
     // let bytes = std::fs::read("D:\\Coding\\A_Star_is_Born.mp4.torrent").unwrap();
     // //println!("{:?}", bytes);

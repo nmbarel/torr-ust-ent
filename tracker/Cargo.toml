@@ -1,17 +1,11 @@
-[workspace]
-members = [
-    "bencode", "torrent-file", "tracker",
-]
-
 [package]
-name = "torrent"
+name = "tracker"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bencode = { path = "./bencode" }
-torrent-file = { path = "./torrent-file" }
-tracker = { path = "./tracker" }
+bencode = { path = "../bencode" }
+torrent-file = { path = "../torrent-file" }
 tokio = { version = "1", features = ["full"] }
 reqwest = { version = "0.12", features = ["stream","rustls-tls"] }
 percent-encoding = "2.3"

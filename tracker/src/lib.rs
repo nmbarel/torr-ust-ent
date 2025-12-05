@@ -1,10 +1,9 @@
-pub mod bencode;
+pub mod http;
+pub mod types;
 pub mod error;
-pub mod decode;
-pub mod encode;
 
-pub use bencode::Bencode;
-pub use error::BencodeError;
+pub use types::{TrackerRequest, TrackerResponse, PeerInfo};
+pub use error::TrackerError;
 
 pub fn add(left: u64, right: u64) -> u64 {
     left + right

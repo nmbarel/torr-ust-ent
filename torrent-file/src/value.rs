@@ -8,7 +8,6 @@ pub struct TorrentMetadata {
     info_hash: [u8; 20],
     creation_date: Option<i64>,
     announce: String,
-    //announce_list: Vec<String>,
     piece_length: i64,
     pieces: Vec<u8>,
     name: String,
@@ -17,18 +16,30 @@ pub struct TorrentMetadata {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-enum FileStructure {
+pub enum FileStructure {
     Single(i64),
     Multiple(Vec<TorrentFile>)
 }
 
 #[derive(Debug, Clone, PartialEq)]
-struct TorrentFile {
+pub struct TorrentFile {
     length: i64,
     path: String,
 }
 
 impl TorrentMetadata {
+    pub fn info_hash(&self) -> &[u8; 20] { &self.info_hash }
+    pub fn creation_date(&self) -> Option<i64> {match &self.creation_date {
+        Some(date) => Some(*date),
+        None => None,
+        }
+    }
+    pub fn announce(&self) -> &str {&self.announce}
+    pub fn piece_length(&self) -> i64 {self.piece_length}
+    pub fn pieces(&self) -> &Vec<u8> {&self.pieces}
+    pub fn name(&self) -> &str {&self.name}
+    pub fn file_structure(&self) -> &FileStructure {&self.file_structure}
+
     pub fn from_file(path: impl AsRef<Path>) -> Result<Self, TorrentError> {
         let bytes = std::fs::read(path)
             .map_err(|e| TorrentError::msg(format!("error reading file: {}", e)))?;
@@ -45,7 +56,7 @@ impl TorrentMetadata {
         // got bencoded dict, need to parse it into TorrentMetadata struct 
         //(hash the info, load all the values from the Bencode::dict dict, choose in the FileStructure enum)
 
-        let torrent_info = Self::get_required(&dict, "info")?;
+        let torrent_info = get_required(&dict, "info")?;
 
         let encoder = Encoder::new(torrent_info.clone());
         let info_asbytes = encoder.encode()
@@ -58,29 +69,29 @@ impl TorrentMetadata {
         let mut info_hash = [0u8; 20];
         info_hash.copy_from_slice(&result[..]);
 
-        let announce = Self::get_required(&dict, "announce")?.as_str()
+        let announce = get_required(&dict, "announce")?.as_str()
             .ok_or(TorrentError::msg("Cannot translate annouce to str"))?;
 
-        let creation_date = match Self::get_required(&dict, "creation date") {
+        let creation_date = match get_required(&dict, "creation date") {
             Ok(Bencode::Int(time)) => time,
             Ok(_) => &0,
             Err(_) => &0,
         };
 
-        let piece_length = Self::get_required(&torrent_info, "piece length")?
+        let piece_length = get_required(&torrent_info, "piece length")?
             .as_int().ok_or( TorrentError::msg("Cannot translate piece_length to int!"))?;
 
-        let name = Self::get_required(torrent_info, "name")?
+        let name = get_required(torrent_info, "name")?
             .as_str().ok_or(TorrentError::msg("Cannot translate name to str"))?;
 
-        let pieces = Self::get_required(&torrent_info, "pieces")?
+        let pieces = get_required(&torrent_info, "pieces")?
             .as_bytes().ok_or(TorrentError::msg("Cannot translate pieces to bytes"))?;
 
-        let file_structure = match Self::get_required(&torrent_info, "length") {
+        let file_structure = match get_required(&torrent_info, "length") {
             Ok(Bencode::Int(len)) => FileStructure::Single(*len),
             Ok(_) => return Err(TorrentError::msg("length was incorrectly decoded!")),
             Err(_) => {
-                let file_list = Self::get_required(&torrent_info, "files")?
+                let file_list = get_required(&torrent_info, "files")?
                     .as_list().ok_or(TorrentError::msg("Cannot parse files from list"))?;
 
                 let mut file_struct_vec: Vec<TorrentFile> = Vec::new();
@@ -121,22 +132,22 @@ impl TorrentMetadata {
             creation_date: Some(*creation_date),
             announce,
             piece_length,
-            pieces: [].to_vec(),
+            pieces: pieces.to_vec(),
             name,
             file_structure,
 
         })
     }
+}
 
-    fn get_required<'a>(dict: &'a Bencode, key: &str) -> Result<&'a Bencode, TorrentError> {
-        match dict {
-            Bencode::Dict(d) => {
-                d.get(&key.as_bytes().to_vec())
-                    .ok_or_else(|| TorrentError::msg(format!("Missing '{}' key", key)))
-            }
-            _ => {
-                Err(TorrentError::msg("passed a non-dict Bencode object to get_required!"))
-            }
+pub fn get_required<'a>(dict: &'a Bencode, key: &str) -> Result<&'a Bencode, TorrentError> {
+    match dict {
+        Bencode::Dict(d) => {
+            d.get(&key.as_bytes().to_vec())
+                .ok_or_else(|| TorrentError::msg(format!("Missing '{}' key", key)))
+        }
+        _ => {
+            Err(TorrentError::msg("passed a non-dict Bencode object to get_required!"))
         }
     }
 }

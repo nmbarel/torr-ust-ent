@@ -1,9 +1,12 @@
 use bencode::Bencode;
 use bencode::decode::Decoder;
 use bencode::encode::Encoder;
-use torrent_file::value::TorrentMetadata;
+use torrent_file::value::{FileStructure, TorrentMetadata};
+use reqwest::Client;
+use tracker::TrackerRequest;
 
-fn main() {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>>{
     // A few example bencoded values
     // let examples = [
     //     b"4:spam".to_vec(),                    // bytes -> "spam"
@@ -52,21 +55,34 @@ fn main() {
     }
 
     //File decode
-    let parsedTorrent = TorrentMetadata::from_file("D:\\Coding\\A_Star_is_Born.mp4.torrent");
+    let parsedTorrent = TorrentMetadata::from_file("C:\\Users\\User\\Downloads\\AnduinOS-1.4.1-zh_TW.iso.torrent");
 
     match parsedTorrent {
         Ok(tm) => {
-            println!("{:#?}", tm)
+            //println!("{:#?}", tm);
+
+            let client = Client::new();
+
+            let peer_id: [u8; 20] = [0; 20];
+            let req = TrackerRequest::new(
+                tm.announce().clone(),
+                *tm.info_hash(),
+                peer_id,
+                6881,
+                0,
+                0,
+                317625051, // need to make a match where if single just take the len and if multiple add all of the lens
+                true,
+            );
+
+            println!("{:#?}", req);
+
+            let resp = tracker::http::announce(&client, &req).await?;
+            println!("{:#?}", resp)
         },
         Err(e) => eprintln!("{}", e)
     }
 
+    Ok(())
 
-    // let bytes = std::fs::read("D:\\Coding\\A_Star_is_Born.mp4.torrent").unwrap();
-    // //println!("{:?}", bytes);
-    // let mut dec = Decoder::new(bytes);
-    // match dec.decode() {
-    //     Ok(value) => println!("{:?}", value.as_str().unwrap()),
-    //     Err(e) => eprintln!("error {:?}", e),
-    // }
 }
